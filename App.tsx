@@ -3,6 +3,7 @@ import { RefreshCw, Download, Loader2, PlusCircle, ArrowLeft, Settings } from 'l
 import { ProcessingStatus, StickerSegment, AppMode } from './types';
 import { loadImage, processStickerSheet, extractStickerFromRect, Rect } from './services/imageProcessor';
 import { generateStickerName, resetServerConfigCache } from './services/geminiService';
+import { calculateStickerGridLayout, getResponsiveStickerSize } from './services/layout.mjs';
 import ManualCropModal from './components/ManualCropModal';
 import SettingsModal, { STORAGE_KEYS } from './components/SettingsModal';
 import CutePrinter2D from './components/CutePrinter2D';
@@ -24,11 +25,16 @@ const App: React.FC = () => {
   const [isZipping, setIsZipping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [cutThreshold, setCutThreshold] = useState(15);
+  const [aiNamingEnabled, setAiNamingEnabled] = useState(false);
+  const [stickerSize, setStickerSize] = useState(() =>
+    typeof window === 'undefined' ? 128 : getResponsiveStickerSize(window.innerWidth)
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     const savedThreshold = localStorage.getItem(STORAGE_KEYS.CUT_THRESHOLD);
     if (savedThreshold) setCutThreshold(Number(savedThreshold));
+    setAiNamingEnabled(localStorage.getItem(STORAGE_KEYS.AI_NAMING_ENABLED) === 'true');
   }, []);
 
   React.useEffect(() => {
@@ -71,6 +77,7 @@ const App: React.FC = () => {
   const handleSettingsSave = () => {
     const savedThreshold = localStorage.getItem(STORAGE_KEYS.CUT_THRESHOLD);
     if (savedThreshold) setCutThreshold(Number(savedThreshold));
+    setAiNamingEnabled(localStorage.getItem(STORAGE_KEYS.AI_NAMING_ENABLED) === 'true');
   };
 
   const processFile = async (file: File) => {
@@ -118,7 +125,11 @@ const App: React.FC = () => {
       });
 
       setSegments(stackedSegments);
-      runAiNaming(stackedSegments);
+      if (aiNamingEnabled) {
+        runAiNaming(stackedSegments);
+      } else {
+        setStatus({ stage: 'complete', progress: 100, message: '完成!' });
+      }
 
     } catch (error) {
       console.error(error);
@@ -175,7 +186,11 @@ const App: React.FC = () => {
     if (newSegment) {
       setSegments(prev => [...prev, newSegment]);
       setIsManualCropping(false);
-      runAiNaming([newSegment]);
+      if (aiNamingEnabled) {
+        runAiNaming([newSegment]);
+      } else {
+        setStatus({ stage: 'complete', progress: 100, message: '完成!' });
+      }
     }
   };
 
@@ -301,34 +316,16 @@ const App: React.FC = () => {
 
           <button
             onClick={() => {
-              // Tiling Logic
               if (segments.length === 0) return;
 
-              const cols = 5;
-              // Stickers are displayed at w-32 (128px). 
-              // We should use a fixed grid based on this visual size, not the source resolution.
-              const cellWidth = 135;
-              const cellHeight = 130;
+              const layout = calculateStickerGridLayout(segments.length, window.innerWidth);
+              setStickerSize(layout.stickerSize);
 
-              const totalRows = Math.ceil(segments.length / cols);
-              const gridWidth = cols * cellWidth;
-              const gridHeight = totalRows * cellHeight;
-
-              // Center horizontally
-              const startX = -gridWidth / 2 + cellWidth / 2;
-              // Center vertically but push down (approx 120px) under printer
-              const startY = -gridHeight / 2 + cellHeight / 2 + 120;
-
-              const newSegments = segments.map((seg, i) => {
-                const col = i % cols;
-                const row = Math.floor(i / cols);
-
-                return {
-                  ...seg,
-                  originalX: startX + col * cellWidth,
-                  originalY: startY + row * cellHeight
-                };
-              });
+              const newSegments = segments.map((seg, i) => ({
+                ...seg,
+                originalX: layout.positions[i].x,
+                originalY: layout.positions[i].y
+              }));
               setSegments(newSegments);
             }}
             className="cute-btn fixed top-16 left-4 z-50 flex items-center gap-2"
@@ -372,7 +369,7 @@ const App: React.FC = () => {
 
           {/* The output stack - Stickers spill out below the printer */}
           <div className="sticker-output-area">
-            <StickerStack stickers={segments} visible={segments.length > 0} />
+            <StickerStack stickers={segments} visible={segments.length > 0} stickerSize={stickerSize} />
           </div>
 
           {/* Processing State Indicator */}

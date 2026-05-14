@@ -11,7 +11,8 @@ export const STORAGE_KEYS = {
   API_URL: 'emojicut_api_url',
   MODEL_NAME: 'emojicut_model_name',
   NAMING_MODEL: 'emojicut_naming_model',
-  CUT_THRESHOLD: 'emojicut_cut_threshold'
+  CUT_THRESHOLD: 'emojicut_cut_threshold',
+  AI_NAMING_ENABLED: 'emojicut_ai_naming_enabled'
 };
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onSave }) => {
@@ -19,6 +20,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onSave }) => {
   const [apiUrl, setApiUrl] = useState('');
   const [modelName, setModelName] = useState('');
   const [namingModel, setNamingModel] = useState('');
+  const [aiNamingEnabled, setAiNamingEnabled] = useState(false);
   const [threshold, setThreshold] = useState(15);
   const [showSaved, setShowSaved] = useState(false);
   const [serverConfigured, setServerConfigured] = useState(false);
@@ -28,12 +30,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onSave }) => {
     const savedUrl = localStorage.getItem(STORAGE_KEYS.API_URL);
     const savedModel = localStorage.getItem(STORAGE_KEYS.MODEL_NAME);
     const savedNaming = localStorage.getItem(STORAGE_KEYS.NAMING_MODEL);
+    const savedAiNamingEnabled = localStorage.getItem(STORAGE_KEYS.AI_NAMING_ENABLED);
     const savedThreshold = localStorage.getItem(STORAGE_KEYS.CUT_THRESHOLD);
 
     if (savedKey) setApiKey(savedKey);
     if (savedUrl) setApiUrl(savedUrl);
     if (savedModel) setModelName(savedModel);
     if (savedNaming) setNamingModel(savedNaming);
+    setAiNamingEnabled(savedAiNamingEnabled === 'true');
     if (savedThreshold) setThreshold(Number(savedThreshold));
 
     fetch('/api/config', {
@@ -56,6 +60,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onSave }) => {
     localStorage.setItem(STORAGE_KEYS.API_URL, apiUrl);
     localStorage.setItem(STORAGE_KEYS.MODEL_NAME, modelName);
     localStorage.setItem(STORAGE_KEYS.NAMING_MODEL, namingModel);
+    localStorage.setItem(STORAGE_KEYS.AI_NAMING_ENABLED, aiNamingEnabled ? 'true' : 'false');
     localStorage.setItem(STORAGE_KEYS.CUT_THRESHOLD, threshold.toString());
 
     setShowSaved(true);
@@ -153,6 +158,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onSave }) => {
                 用于分析和命名贴纸的模型。
               </p>
             </div>
+
+            <label className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50 p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={aiNamingEnabled}
+                onChange={(e) => setAiNamingEnabled(e.target.checked)}
+                className="mt-1 h-4 w-4 accent-pink-400"
+              />
+              <span className="text-sm text-gray-700">
+                <span className="font-semibold">启用 AI 自动命名</span>
+                <span className="block text-xs text-gray-500 mt-1">
+                  默认关闭。开启后会为切出的每张贴纸调用命名模型，速度更慢且会额外消耗 API 额度。
+                </span>
+              </span>
+            </label>
           </div>
 
           <div className="h-px bg-gray-100"></div>

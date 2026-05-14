@@ -5,9 +5,10 @@ import { Download, X } from 'lucide-react';
 interface StickerStackProps {
     stickers: StickerSegment[];
     visible: boolean;
+    stickerSize?: number;
 }
 
-const StickerStack: React.FC<StickerStackProps> = ({ stickers, visible }) => {
+const StickerStack: React.FC<StickerStackProps> = ({ stickers, visible, stickerSize = 128 }) => {
     if (!visible || stickers.length === 0) return null;
 
     return (
@@ -23,6 +24,7 @@ const StickerStack: React.FC<StickerStackProps> = ({ stickers, visible }) => {
                         sticker={sticker}
                         index={index}
                         total={stickers.length}
+                        stickerSize={stickerSize}
                     />
                 ))}
             </div>
@@ -34,9 +36,10 @@ interface DraggableProps {
     sticker: StickerSegment;
     index: number;
     total: number;
+    stickerSize: number;
 }
 
-const DraggableSticker: React.FC<DraggableProps> = ({ sticker, index, total }) => {
+const DraggableSticker: React.FC<DraggableProps> = ({ sticker, index, total, stickerSize }) => {
     // Randomize initial spread slightly for that "pile" look
     const initialRotation = useRef(Math.random() * 30 - 15);
     const initialX = useRef(Math.random() * 40 - 20);
@@ -125,7 +128,8 @@ const DraggableSticker: React.FC<DraggableProps> = ({ sticker, index, total }) =
                 <img
                     src={sticker.dataUrl}
                     alt={sticker.name}
-                    className="w-32 h-32 object-contain pointer-events-none select-none"
+                    className="object-contain pointer-events-none select-none"
+                    style={{ width: stickerSize, height: stickerSize }}
                 />
 
                 {/* Hover Actions */}
