@@ -100,7 +100,7 @@ export const buildStickerPrompt = (style: StickerStyle, customStyle?: string): s
   // Let's make it generic: "16 distinct stickers".
   const basePrompt = `为图中角色设计一个可爱的卡通角色，生成 16个不同动作的贴纸。姿势和文字排版要富有创意，变化丰富，设计独特。对话应为简体中文，可以是角色在不同场景，不同情绪的，角色比例二头身。
 
-重要要求：背景必须是纯白色(#FFFFFF)，不要有任何其他颜色或图案。每个贴纸之间要有足够间距。`;
+重要要求：背景必须是纯白色(#FFFFFF)，不要有任何其他颜色或图案。每个贴纸之间要有足够间距，避免相邻贴纸互相粘连。每个表情内部的对话文字、装饰图案、动作符号必须和对应角色主体足够贴近，距离控制在 10px 以内，防止切图时文字或图案被识别成独立贴纸。`;
 
   let styleDescription = `画面风格：${style.description}`;
 

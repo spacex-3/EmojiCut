@@ -106,12 +106,16 @@ const DraggableSticker: React.FC<DraggableProps> = ({ sticker, index, total, sti
         <div
             className="absolute left-1/2 top-1/2 cursor-grab active:cursor-grabbing transition-shadow duration-200"
             style={{
-                transform: `translate(${position.x}px, ${position.y}px) rotate(${initialRotation.current}deg) scale(${isDragging ? 1.1 : 1})`,
+                '--target-x': `${position.x}px`,
+                '--target-y': `${position.y}px`,
+                '--target-rotation': `${initialRotation.current}deg`,
+                '--target-scale': `${isDragging ? 1.1 : 1}`,
+                transform: `translate(var(--target-x), var(--target-y)) rotate(var(--target-rotation)) scale(var(--target-scale))`,
                 zIndex: isDragging ? 100 : index, // Bring to front when dragging
                 opacity: 0,
                 animation: `slideOut 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards`,
                 animationDelay: `${index * 0.1}s` // Stagger animation
-            }}
+            } as React.CSSProperties}
             onMouseDown={handleMouseDown}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -145,8 +149,14 @@ const DraggableSticker: React.FC<DraggableProps> = ({ sticker, index, total, sti
             </div>
             <style>{`
         @keyframes slideOut {
-            from { transform: translate(0, -100px) scale(0.5); opacity: 0; }
-            to { opacity: 1; }
+            from {
+                transform: translate(0, -35vh) rotate(-6deg) scale(0.5);
+                opacity: 0;
+            }
+            to {
+                transform: translate(var(--target-x), var(--target-y)) rotate(var(--target-rotation)) scale(var(--target-scale));
+                opacity: 1;
+            }
         }
       `}</style>
         </div>

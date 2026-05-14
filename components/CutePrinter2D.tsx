@@ -112,7 +112,8 @@ const CutePrinter2D: React.FC<CutePrinterProps> = ({ status, progress, message, 
                 <div className="w-full mt-3 px-2">
                     <textarea
                         className="printer-style-input"
-                        placeholder="输入画面风格，如：赛博朋克霓虹灯、水彩风..."
+                        placeholder={`输入画面风格，如：赛博朋克霓虹灯、水彩风...
+也可以直接在下面按钮选择一种风格，并直接点击生成贴纸即可`}
                         value={customStyle}
                         onChange={(e) => setCustomStyle(e.target.value)}
                         rows={2}
@@ -137,7 +138,10 @@ const CutePrinter2D: React.FC<CutePrinterProps> = ({ status, progress, message, 
             {(isGenerating || currentStatus === 'processing') && (
                 <div className="w-full mt-3 flex flex-col items-center">
                     <Sparkles size={24} className="text-pink-400 animate-spin mb-2" />
-                    <div className="screen-text text-sm mb-2">{message || (isGenerating ? 'AI 生成中...' : 'Processing...')}</div>
+                    <div className="screen-text text-sm mb-1">{message || (isGenerating ? 'AI 生成中...' : 'Processing...')}</div>
+                    {isGenerating && (
+                        <div className="text-[11px] text-pink-400 font-semibold mb-2">预计 1 分钟左右</div>
+                    )}
                     <div className="w-full max-w-[160px] h-3 bg-white rounded-full border-2 border-pink-200 overflow-hidden">
                         <div
                             className="h-full bg-pink-300 transition-all duration-300"

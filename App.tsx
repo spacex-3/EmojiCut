@@ -347,8 +347,8 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {/* Static Printer Display - hide after cutting is complete so it does not cover tiled stickers */}
-          {!(status.stage === 'complete' && segments.length > 0) && (
+          {/* Static Printer Display - hide after stickers exist so it does not cover tiled stickers */}
+          {segments.length === 0 && (
             <div className="cute-machine cute-machine-static">
               <div className="w-full flex justify-center items-center gap-2 mb-2 opacity-80">
                 <div className="w-2 h-2 rounded-full bg-pink-400"></div>
