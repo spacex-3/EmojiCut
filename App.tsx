@@ -1,15 +1,20 @@
 import React, { useState, useRef } from 'react';
-import { RefreshCw, Download, Loader2, PlusCircle, ArrowLeft } from 'lucide-react';
+import { RefreshCw, Download, Loader2, PlusCircle, ArrowLeft, Settings } from 'lucide-react';
 import { ProcessingStatus, StickerSegment, AppMode } from './types';
 import { loadImage, processStickerSheet, extractStickerFromRect, Rect } from './services/imageProcessor';
-import { generateStickerName } from './services/geminiService';
+import { generateStickerName, resetServerConfigCache } from './services/geminiService';
 import ManualCropModal from './components/ManualCropModal';
+import SettingsModal, { STORAGE_KEYS } from './components/SettingsModal';
 import CutePrinter2D from './components/CutePrinter2D';
 import StickerStack from './components/StickerStack';
+import LoginScreen from './components/LoginScreen';
 import JSZip from 'jszip';
 import './shojo.css';
 
+type AuthState = 'checking' | 'ready' | 'login_required';
+
 const App: React.FC = () => {
+  const [authState, setAuthState] = useState<AuthState>('checking');
   const [appMode, setAppMode] = useState<AppMode>('generate');
   const [status, setStatus] = useState<ProcessingStatus>({ stage: 'idle', progress: 0, message: '' });
   const [segments, setSegments] = useState<StickerSegment[]>([]);
@@ -17,7 +22,56 @@ const App: React.FC = () => {
   const [originalImageEl, setOriginalImageEl] = useState<HTMLImageElement | null>(null);
   const [isManualCropping, setIsManualCropping] = useState(false);
   const [isZipping, setIsZipping] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [cutThreshold, setCutThreshold] = useState(15);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    const savedThreshold = localStorage.getItem(STORAGE_KEYS.CUT_THRESHOLD);
+    if (savedThreshold) setCutThreshold(Number(savedThreshold));
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/status', {
+          credentials: 'include',
+          headers: { Accept: 'application/json' },
+        });
+
+        if (!response.ok) {
+          if (!cancelled) setAuthState('ready');
+          return;
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          if (!cancelled) setAuthState('ready');
+          return;
+        }
+
+        const data = await response.json();
+        if (!cancelled) {
+          setAuthState(data.authRequired && !data.authenticated ? 'login_required' : 'ready');
+        }
+      } catch {
+        if (!cancelled) setAuthState('ready');
+      }
+    };
+
+    checkAuth();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSettingsSave = () => {
+    const savedThreshold = localStorage.getItem(STORAGE_KEYS.CUT_THRESHOLD);
+    if (savedThreshold) setCutThreshold(Number(savedThreshold));
+  };
 
   const processFile = async (file: File) => {
     try {
@@ -43,8 +97,28 @@ const App: React.FC = () => {
         return;
       }
 
-      setSegments(detectedSegments);
-      runAiNaming(detectedSegments);
+
+      // Override initial positions to "stack" them under the printer (pile up)
+      // instead of keeping the sheet's grid layout
+      const stackedSegments = detectedSegments.map((seg, i) => {
+        // Random slight scatter for "pile" effect
+        const scatterX = (Math.random() - 0.5) * 40;
+        const scatterY = (Math.random() - 0.5) * 40;
+
+        return {
+          ...seg,
+          // 0,0 is center of the viewport usually in this app's logic? 
+          // Reverting to the logic where they drop at the bottom center.
+          // Assuming 0 is X center. Y needs to be below printer.
+          // Printer height is approx 220px. 350 was too far down.
+          // 180 was still a bit low. Let's pull it up to 80 (immediate drop).
+          originalX: 0 + scatterX,
+          originalY: 80 + scatterY
+        };
+      });
+
+      setSegments(stackedSegments);
+      runAiNaming(stackedSegments);
 
     } catch (error) {
       console.error(error);
@@ -165,6 +239,25 @@ const App: React.FC = () => {
     processFile(file);
   };
 
+  if (authState === 'checking') {
+    return (
+      <div className="shojo-container min-h-screen flex items-center justify-center">
+        <div className="bg-white/80 rounded-3xl px-6 py-4 text-pink-400 font-bold shadow-lg">加载中...</div>
+      </div>
+    );
+  }
+
+  if (authState === 'login_required') {
+    return (
+      <LoginScreen
+        onAuthenticated={() => {
+          resetServerConfigCache();
+          setAuthState('ready');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="shojo-container">
 
@@ -174,6 +267,23 @@ const App: React.FC = () => {
           status="idle"
           onGenerated={handleGenerated}
           onDirectUpload={handleDirectUpload}
+        />
+      )}
+
+      {/* Settings Button (Always Visible or Conditional) */}
+      <button
+        onClick={() => setShowSettings(true)}
+        className="fixed top-4 right-4 z-50 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md text-gray-600 hover:text-pink-500 hover:bg-white transition-all"
+        title="设置"
+      >
+        <Settings size={20} />
+      </button>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          onSave={handleSettingsSave}
         />
       )}
 
@@ -187,6 +297,44 @@ const App: React.FC = () => {
             style={{ borderColor: '#CE93D8', color: '#7B1FA2', background: '#F3E5F5' }}
           >
             <ArrowLeft size={16} /> 重新生成
+          </button>
+
+          <button
+            onClick={() => {
+              // Tiling Logic
+              if (segments.length === 0) return;
+
+              const cols = 5;
+              // Stickers are displayed at w-32 (128px). 
+              // We should use a fixed grid based on this visual size, not the source resolution.
+              const cellWidth = 135;
+              const cellHeight = 130;
+
+              const totalRows = Math.ceil(segments.length / cols);
+              const gridWidth = cols * cellWidth;
+              const gridHeight = totalRows * cellHeight;
+
+              // Center horizontally
+              const startX = -gridWidth / 2 + cellWidth / 2;
+              // Center vertically but push down (approx 120px) under printer
+              const startY = -gridHeight / 2 + cellHeight / 2 + 120;
+
+              const newSegments = segments.map((seg, i) => {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+
+                return {
+                  ...seg,
+                  originalX: startX + col * cellWidth,
+                  originalY: startY + row * cellHeight
+                };
+              });
+              setSegments(newSegments);
+            }}
+            className="cute-btn fixed top-16 left-4 z-50 flex items-center gap-2"
+            style={{ borderColor: '#90CAF9', color: '#1565C0', background: '#E3F2FD' }}
+          >
+            <RefreshCw size={16} /> 一键平铺
           </button>
 
           {/* Floating Controls for when stickers are present */}

@@ -24,7 +24,7 @@
 
 ### 环境要求
 
-- Node.js 18+
+- Node.js 20.19+（GitHub Actions 和 Docker 均使用 Node 20）
 - Gemini API Key
 
 ### 安装运行
@@ -38,13 +38,111 @@ cd EmojiCut
 npm install
 
 # 配置 API Key
-# 在 .env.local 文件中设置 API_KEY=你的Gemini_API_Key
+# 在 .env.local 文件中设置 GEMINI_API_KEY=你的Gemini_API_Key
+# 或者打开网页右上角设置，在浏览器本地填写 API Key / API URL / Model
 
 # 启动开发服务器
 npm run dev
 ```
 
 访问 http://localhost:3000 开始使用！
+
+### Docker Compose 多人部署
+
+推荐多人使用时走服务端代理：API Key 只放在 Docker 环境变量里，不会打包进前端 JS。
+`docker-compose.yml` 默认使用 GHCR 拉取镜像：
+
+```yaml
+image: ghcr.io/spacex-3/emojicut:latest
+pull_policy: always
+```
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+编辑 `docker-compose.yml`：
+
+```yaml
+environment:
+  AI_PROVIDER: openai
+  API_BASE_URL: https://api.openai.com/v1
+  API_KEY: your-api-key
+  IMAGE_MODEL: gpt-image-1
+  NAMING_MODEL: gpt-4o-mini
+  APP_PASSWORD: your-web-password
+```
+
+然后访问：
+
+```text
+http://localhost:8080
+```
+
+如果你的服务是 Gemini API，也可以这样配置：
+
+```yaml
+environment:
+  AI_PROVIDER: gemini
+  API_BASE_URL: https://generativelanguage.googleapis.com
+  API_KEY: your-gemini-api-key
+  IMAGE_MODEL: gemini-3-pro-image-preview
+  NAMING_MODEL: gemini-2.5-flash
+  APP_PASSWORD: your-web-password
+```
+
+### OpenAI-compatible API 说明
+
+`AI_PROVIDER=openai` 时，服务端默认调用：
+
+- 生成表情包：`POST {API_BASE_URL}/images/edits`
+- 命名贴纸：`POST {API_BASE_URL}/chat/completions`
+
+如果你的中转服务路径不同，可以用：
+
+```yaml
+OPENAI_IMAGE_ENDPOINT: /images/edits
+OPENAI_CHAT_ENDPOINT: /chat/completions
+OPENAI_IMAGE_SIZE: 1024x1024
+# OPENAI_RESPONSE_FORMAT: b64_json
+```
+
+### 密码验证
+
+- 设置 `APP_PASSWORD` 后，网页会先显示简单密码页。
+- 留空 `APP_PASSWORD` 可关闭密码验证。
+- 登录状态使用 HttpOnly session cookie。
+
+### 隐私 / 生成记录
+
+服务端只做临时转发处理：
+
+- 不写数据库；
+- 不保存上传图片；
+- 不保存生成图片；
+- 不保存 prompt 或 API 响应；
+- 不打印图片 base64、prompt、API Key 或请求体日志；
+- 生成结果只保留在当前浏览器页面内存里，用户下载 ZIP 后由浏览器本地保存。
+
+### GitHub Actions 编译
+
+仓库包含 `.github/workflows/build.yml`，会在 push / pull request 时执行：
+
+```bash
+npm ci
+npm test
+npm run build
+```
+
+推送到 `main` / `master` 后还会自动构建并发布镜像到：
+
+```text
+ghcr.io/spacex-3/emojicut:latest
+ghcr.io/spacex-3/emojicut:<commit-sha>
+```
+
+如果 GHCR 包首次发布后无法拉取，请在 GitHub 仓库的 Packages 页面把镜像可见性改为 Public，或在部署机器上执行 `docker login ghcr.io` 后再拉取。
 
 ## 📖 使用说明
 

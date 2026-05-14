@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import '../shojo.css';
-import { Sparkles, Heart, Star, CloudUpload, Power, Scissors, Wand2, Image as ImageIcon } from 'lucide-react';
-import { StickerStyle, STICKER_STYLES, generateStickerSheet } from '../services/geminiService';
+import { Sparkles, Heart, Star, CloudUpload, Power, Scissors, Wand2, Image as ImageIcon, PenLine } from 'lucide-react';
+import { StickerStyle, STICKER_STYLES, generateStickerSheet, buildStickerPrompt } from '../services/geminiService';
 
 interface CutePrinterProps {
     status: 'idle' | 'uploading' | 'generating' | 'processing' | 'complete' | 'error';
@@ -18,6 +18,10 @@ const CutePrinter2D: React.FC<CutePrinterProps> = ({ status, progress, message, 
     const [selectedStyleId, setSelectedStyleId] = useState('line_cute');
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Prompt Generator State
+    const [showPromptModal, setShowPromptModal] = useState(false);
+    const [generatedPrompt, setGeneratedPrompt] = useState('');
 
     const selectedStyle = STICKER_STYLES.find(s => s.id === selectedStyleId) || STICKER_STYLES[0];
 
@@ -103,8 +107,8 @@ const CutePrinter2D: React.FC<CutePrinterProps> = ({ status, progress, message, 
                 )}
             </div>
 
-            {/* Style Input Section - Shows after upload */}
-            {referenceImage && !isGenerating && currentStatus !== 'processing' && (
+            {/* Style Input Section - ALWAYS VISIBLE */}
+            {!isGenerating && currentStatus !== 'processing' && (
                 <div className="w-full mt-3 px-2">
                     <textarea
                         className="printer-style-input"
@@ -152,32 +156,69 @@ const CutePrinter2D: React.FC<CutePrinterProps> = ({ status, progress, message, 
                 </div>
             )}
 
-            {/* Physical Controls */}
-            <div className="flex items-center justify-between w-full px-4 mt-4">
-                {/* Power Button */}
-                <div className="flex flex-col items-center gap-1 group cursor-pointer">
+            {/* Physical Controls - Unified Style */}
+            <div className="flex items-center justify-around w-full px-2 mt-4">
+
+                {/* 1. Power Button (Reset/Status) */}
+                <div
+                    className="flex flex-col items-center gap-1 group cursor-pointer"
+                    title="重置 / 电源"
+                    onClick={() => {
+                        if (referenceImage) handleReset();
+                    }}
+                >
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center border-b-4 active:border-b-0 active:translate-y-1 transition-all ${isGenerating ? 'bg-green-100 border-green-200 text-green-500' : 'bg-red-50 border-red-100 text-red-300 group-hover:text-red-400'}`}>
                         <Power size={18} />
                     </div>
-                    <div className={`w-2 h-2 rounded-full ${isGenerating ? 'bg-green-400 animate-pulse' : 'bg-red-300'}`}></div>
+                    <div className="text-[9px] uppercase font-bold text-red-200 tracking-wider">重置</div>
                 </div>
 
-                {/* Generate Button - Main Action */}
-                <button
-                    className="printer-action-btn"
-                    onClick={handleGenerate}
-                    disabled={!referenceImage || isGenerating}
+                {/* 2. Generate Prompt Button */}
+                <div
+                    className="flex flex-col items-center gap-1 group cursor-pointer"
+                    onClick={() => {
+                        const prompt = buildStickerPrompt(selectedStyle, customStyle);
+                        setShowPromptModal(true);
+                        setGeneratedPrompt(prompt);
+                    }}
                 >
-                    <Wand2 size={20} />
-                    <span>{isGenerating ? '生成中' : '✨ 生成贴纸'}</span>
-                </button>
+                    <div className="w-10 h-10 rounded-full bg-violet-50 border-b-4 border-violet-100 flex items-center justify-center text-violet-300 group-hover:text-violet-400 active:border-b-0 active:translate-y-1 transition-all">
+                        <PenLine size={18} />
+                    </div>
+                    <div className="text-[9px] uppercase font-bold text-violet-200 tracking-wider">生成提示词</div>
+                </div>
 
-                {/* Cutter Button */}
-                <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                {/* 3. Generate Sticker Button (Unified Style) */}
+                <div
+                    className={`flex flex-col items-center gap-1 group cursor-pointer ${(!referenceImage || isGenerating) ? 'opacity-50' : ''}`}
+                    onClick={() => {
+                        if (referenceImage && !isGenerating) handleGenerate();
+                    }}
+                >
+                    <div className="w-12 h-12 rounded-full bg-pink-400 border-b-4 border-pink-600 flex items-center justify-center text-white shadow-lg group-hover:bg-pink-500 active:border-b-0 active:translate-y-1 transition-all">
+                        {isGenerating ? <Sparkles size={24} className="animate-spin" /> : <Wand2 size={24} />}
+                    </div>
+                    <div className="text-[9px] uppercase font-bold text-pink-300 tracking-wider">生成贴纸</div>
+                </div>
+
+                {/* 4. Upload Sheet Button */}
+                <div
+                    className="flex flex-col items-center gap-1 group cursor-pointer"
+                    onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = (e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0];
+                            if (file) onDirectUpload(file);
+                        };
+                        input.click();
+                    }}
+                >
                     <div className="w-10 h-10 rounded-full bg-blue-50 border-b-4 border-blue-100 flex items-center justify-center text-blue-300 group-hover:text-blue-400 active:border-b-0 active:translate-y-1 transition-all">
                         <Scissors size={18} />
                     </div>
-                    <div className="text-[9px] uppercase font-bold text-blue-200 tracking-wider">CUT</div>
+                    <div className="text-[9px] uppercase font-bold text-blue-200 tracking-wider">上传切割</div>
                 </div>
             </div>
 
@@ -191,6 +232,38 @@ const CutePrinter2D: React.FC<CutePrinterProps> = ({ status, progress, message, 
                 className="hidden"
                 accept="image/*"
             />
+
+            {/* Prompt Modal Overlay */}
+            {showPromptModal && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-sm rounded-[60px]">
+                    <div className="bg-white p-6 rounded-2xl w-[90%] shadow-xl border-2 border-violet-200">
+                        <h3 className="text-sm font-bold text-gray-700 mb-2">生成提示词 (Prompt)</h3>
+                        <textarea
+                            className="w-full h-32 text-xs p-2 border border-gray-200 rounded-lg mb-4 resize-none focus:outline-none focus:border-violet-400"
+                            value={generatedPrompt}
+                            readOnly
+                        />
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setShowPromptModal(false)}
+                                className="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                关闭
+                            </button>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(generatedPrompt);
+                                    // Optional: simple feedback
+                                    alert("已复制到剪贴板");
+                                }}
+                                className="px-3 py-1.5 text-xs bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors"
+                            >
+                                复制
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -42,10 +42,20 @@ const DraggableSticker: React.FC<DraggableProps> = ({ sticker, index, total }) =
     const initialX = useRef(Math.random() * 40 - 20);
     const initialY = useRef(Math.random() * 40 - 20 + (index * 2)); // slight stacking effect
 
-    const [position, setPosition] = useState({ x: initialX.current, y: initialY.current });
+    const [position, setPosition] = useState({
+        x: sticker.originalX !== undefined ? sticker.originalX : initialX.current,
+        y: sticker.originalY !== undefined ? sticker.originalY : initialY.current
+    });
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [isHovered, setIsHovered] = useState(false);
+
+    // Sync position with props (for tiling)
+    useEffect(() => {
+        if (sticker.originalX !== undefined && sticker.originalY !== undefined) {
+            setPosition({ x: sticker.originalX, y: sticker.originalY });
+        }
+    }, [sticker.originalX, sticker.originalY]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         setIsDragging(true);

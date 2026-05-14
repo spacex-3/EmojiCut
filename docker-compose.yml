@@ -1,0 +1,32 @@
+services:
+  emojicut:
+    image: ghcr.io/spacex-3/emojicut:latest
+    pull_policy: always
+    container_name: emojicut
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # openai: OpenAI-compatible /v1/images/edits + /v1/chat/completions
+      # gemini: Gemini generateContent API
+      AI_PROVIDER: openai
+
+      # For OpenAI-compatible providers, usually include /v1 at the end.
+      API_BASE_URL: https://api.openai.com/v1
+      API_KEY: replace-with-your-api-key
+
+      # Generation model and naming model.
+      IMAGE_MODEL: gpt-image-1
+      NAMING_MODEL: gpt-4o-mini
+
+      # Optional for OpenAI-compatible providers.
+      OPENAI_IMAGE_SIZE: 1024x1024
+      # OPENAI_IMAGE_ENDPOINT: /images/edits
+      # OPENAI_CHAT_ENDPOINT: /chat/completions
+      # Optional for older compatible providers that require b64_json explicitly.
+      # OPENAI_RESPONSE_FORMAT: b64_json
+
+      # Web access password. Leave empty to disable password auth.
+      APP_PASSWORD: replace-with-a-strong-web-password
+      # Optional stable cookie signing secret. If omitted, APP_PASSWORD is used.
+      # SESSION_SECRET: replace-with-a-long-random-secret

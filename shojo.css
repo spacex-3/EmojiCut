@@ -9,15 +9,29 @@
     --shojo-text: #6B4C4C;
     --shojo-border: #FFB7B2;
     --shojo-font: 'Mali', 'Fredoka', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    /* New Blue Accent for background */
+    --accent-blue: #81D4FA;
 }
 
 body {
     font-family: var(--shojo-font);
     color: var(--shojo-text);
     background-color: var(--shojo-white);
-    /* Cute Polka Dot Pattern */
-    background-image: radial-gradient(var(--shojo-pink-dark) 2px, transparent 2px);
+    /* Cute Polka Dot Pattern - Changed to Light Blue as requested */
+    background-image: radial-gradient(var(--accent-blue) 2px, transparent 2px);
     background-size: 30px 30px;
+    animation: bg-scroll 3s linear infinite;
+}
+
+@keyframes bg-scroll {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 0 30px;
+    }
 }
 
 /* Global form element font styling */
@@ -70,9 +84,11 @@ select {
     height: 380px;
     background: #FFF;
     border-radius: 60px;
-    border: 6px solid #FFC0CB;
+    border: 6px solid #81D4FA;
+    /* Blue border */
     box-shadow:
-        0 15px 0 #FFB7B2,
+        0 15px 0 #4FC3F7,
+        /* Darker blue shadow */
         0 30px 40px rgba(0, 0, 0, 0.15),
         inset 0 -10px 20px rgba(0, 0, 0, 0.05);
     display: flex;

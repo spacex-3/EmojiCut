@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+dist
+dist-ssr
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+docs/superpowers/plans
+docs/superpowers/specs
