@@ -83,7 +83,7 @@ const CutePrinter2D: React.FC<CutePrinterProps> = ({ status, progress, message, 
             {/* Printer Brand / Header */}
             <div className="w-full flex justify-center items-center gap-2 mb-2 opacity-80">
                 <div className="w-2 h-2 rounded-full bg-pink-400"></div>
-                <div className="text-pink-400 font-bold tracking-widest text-xs">✨ NANO BANANA PRO ✨</div>
+                <div className="text-pink-400 font-bold tracking-widest text-xs">EMOJICUT BY KS</div>
                 <div className="w-2 h-2 rounded-full bg-pink-400"></div>
             </div>
 

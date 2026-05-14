@@ -347,25 +347,27 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {/* Static Printer Display - Stickers fall from here */}
-          <div className="cute-machine cute-machine-static">
-            <div className="w-full flex justify-center items-center gap-2 mb-2 opacity-80">
-              <div className="w-2 h-2 rounded-full bg-pink-400"></div>
-              <div className="text-pink-400 font-bold tracking-widest text-xs">✨ NANO BANANA PRO ✨</div>
-              <div className="w-2 h-2 rounded-full bg-pink-400"></div>
+          {/* Static Printer Display - hide after cutting is complete so it does not cover tiled stickers */}
+          {!(status.stage === 'complete' && segments.length > 0) && (
+            <div className="cute-machine cute-machine-static">
+              <div className="w-full flex justify-center items-center gap-2 mb-2 opacity-80">
+                <div className="w-2 h-2 rounded-full bg-pink-400"></div>
+                <div className="text-pink-400 font-bold tracking-widest text-xs">EMOJICUT BY KS</div>
+                <div className="w-2 h-2 rounded-full bg-pink-400"></div>
+              </div>
+              <div className="machine-screen flex items-center justify-center">
+                {status.stage !== 'idle' && status.stage !== 'complete' ? (
+                  <div className="flex flex-col items-center">
+                    <Loader2 size={28} className="animate-spin text-pink-400 mb-2" />
+                    <div className="screen-text text-sm">{status.message}</div>
+                  </div>
+                ) : (
+                  <div className="screen-text">✨ 完成!</div>
+                )}
+              </div>
+              <div className="output-slot-2d"></div>
             </div>
-            <div className="machine-screen flex items-center justify-center">
-              {status.stage !== 'idle' && status.stage !== 'complete' ? (
-                <div className="flex flex-col items-center">
-                  <Loader2 size={28} className="animate-spin text-pink-400 mb-2" />
-                  <div className="screen-text text-sm">{status.message}</div>
-                </div>
-              ) : (
-                <div className="screen-text">✨ 完成!</div>
-              )}
-            </div>
-            <div className="output-slot-2d"></div>
-          </div>
+          )}
 
           {/* The output stack - Stickers spill out below the printer */}
           <div className="sticker-output-area">
