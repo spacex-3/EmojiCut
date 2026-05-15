@@ -75,6 +75,11 @@ export const STICKER_STYLES: StickerStyle[] = [
     description: '经典 LINE 聊天贴纸风，扁平 2D 手绘插画，粗黑色线稿，厚白色贴纸描边，简单明亮配色，赛璐璐平涂，低细节，可爱儿童绘本感。不要 3D，不要真实光影，不要黏土质感，不要皮克斯/迪士尼 3D，不要渐变渲染，不要复杂材质'
   },
   {
+    id: 'stereo_sticker',
+    name: '立体表情包',
+    description: '可爱的卡通二头身角色，适合日常聊天。立体 Q 版表情包风格，圆润可爱，柔和光影，轻微 3D 渲染，玩偶般饱满但不要写实'
+  },
+  {
     id: 'chibi_expressive',
     name: 'Q版表情包',
     description: '夸张表情的Q版角色，情绪丰富'
@@ -98,11 +103,18 @@ export const buildStickerPrompt = (style: StickerStyle, customStyle?: string): s
   // Use generic term or style name if available, but "sticker set" is safer base.
   // The User complaint was that it ALWAYS said "LINE sticker".
   // Let's make it generic: "16 distinct stickers".
-  const basePrompt = `为图中角色设计一个可爱的卡通角色，生成 16个不同动作的贴纸。姿势和文字排版要富有创意，变化丰富，设计独特。对话应为简体中文，可以是角色在不同场景，不同情绪的，角色比例二头身。每个贴纸都应像手机聊天软件里的扁平 2D PNG 表情贴纸，而不是 3D 角色渲染图。
+  const isStereoStyle = style.id === 'stereo_sticker';
+  const sharedPrompt = `为图中角色设计一个可爱的卡通角色，生成 16个不同动作的贴纸。姿势和文字排版要富有创意，变化丰富，设计独特。对话应为简体中文，可以是角色在不同场景，不同情绪的，角色比例二头身。`;
 
-重要要求：背景必须是纯白色(#FFFFFF)，不要有任何其他颜色或图案。每个贴纸之间要有足够间距，避免相邻贴纸互相粘连。每个表情内部的对话文字、装饰图案、动作符号必须和对应角色主体足够贴近，距离控制在 10px 以内，防止切图时文字或图案被识别成独立贴纸。
+  const separationRequirements = `重要要求：背景必须是纯白色(#FFFFFF)，不要有任何其他颜色或图案。每个贴纸之间要有足够间距，避免相邻贴纸互相粘连。每个表情内部的对话文字、装饰图案、动作符号必须和对应角色主体足够贴近，距离控制在 10px 以内，防止切图时文字或图案被识别成独立贴纸。`;
+
+  const flat2dRequirements = `每个贴纸都应像手机聊天软件里的扁平 2D PNG 表情贴纸，而不是 3D 角色渲染图。
 
 风格硬约束：优先使用粗线条、平涂色块、少量阴影或无阴影、干净矢量感。禁止生成 3D、半写实、真实光影、体积光、皮肤高光、玩偶质感、黏土质感、复杂材质、电影感渲染。`;
+
+  const stereoRequirements = `立体表情包风格要求：基于旧版 LINE 风格提示“可爱的卡通二头身角色，适合日常聊天”。可以使用柔和光影、圆润立体 Q 版造型、轻微 3D 渲染、玩偶般饱满体积感，但仍保持手机聊天贴纸的清晰轮廓、厚白色贴纸描边、简洁背景和夸张表情。不要半写实，不要复杂电影感渲染。`;
+
+  const basePrompt = `${sharedPrompt}\n\n${separationRequirements}\n\n${isStereoStyle ? stereoRequirements : flat2dRequirements}`;
 
   let styleDescription = `画面风格：${style.description}`;
 

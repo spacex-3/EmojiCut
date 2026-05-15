@@ -28,6 +28,13 @@ test('default LINE sticker prompt strongly prefers flat 2D sticker art and rejec
   assert.match(source, /不要真实光影/);
 });
 
+test('stereo sticker style keeps the old cute cartoon prompt as a separate preset', () => {
+  const source = read('services/geminiService.ts');
+  assert.match(source, /name: '立体表情包'/);
+  assert.match(source, /可爱的卡通二头身角色，适合日常聊天/);
+  assert.match(source, /const isStereoStyle = style\.id === 'stereo_sticker'/);
+});
+
 test('completed printer is hidden once stickers exist', () => {
   assert.match(read('App.tsx'), /segments\.length === 0/);
 });
