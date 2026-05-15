@@ -18,6 +18,16 @@ test('sticker prompt keeps text and decorations close to the character to avoid 
   assert.match(source, /10px 以内/);
 });
 
+test('default LINE sticker prompt strongly prefers flat 2D sticker art and rejects 3D rendering', () => {
+  const source = read('services/geminiService.ts');
+  assert.match(source, /经典 LINE 聊天贴纸风/);
+  assert.match(source, /扁平 2D 手绘/);
+  assert.match(source, /粗黑色线稿/);
+  assert.match(source, /厚白色贴纸描边/);
+  assert.match(source, /不要 3D/);
+  assert.match(source, /不要真实光影/);
+});
+
 test('completed printer is hidden once stickers exist', () => {
   assert.match(read('App.tsx'), /segments\.length === 0/);
 });
