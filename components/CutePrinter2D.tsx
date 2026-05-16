@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import '../shojo.css';
 import { Sparkles, Heart, Star, CloudUpload, Power, Scissors, Wand2, Image as ImageIcon, PenLine } from 'lucide-react';
 import { StickerStyle, STICKER_STYLES, generateStickerSheet, buildStickerPrompt } from '../services/geminiService';
+import { validateGeneratedImageDataUrl } from '../services/generatedImageGuard.mjs';
 
 interface CutePrinterProps {
     status: 'idle' | 'uploading' | 'generating' | 'processing' | 'complete' | 'error';
@@ -55,6 +56,7 @@ const CutePrinter2D: React.FC<CutePrinterProps> = ({ status, progress, message, 
                 selectedStyle,
                 customStyle || undefined
             );
+            await validateGeneratedImageDataUrl(generatedImageUrl);
             onGenerated(generatedImageUrl);
         } catch (err) {
             console.error('Generation failed:', err);

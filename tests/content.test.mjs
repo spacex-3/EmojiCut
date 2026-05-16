@@ -38,3 +38,9 @@ test('stereo sticker style keeps the old cute cartoon prompt as a separate prese
 test('completed printer is hidden once stickers exist', () => {
   assert.match(read('App.tsx'), /segments\.length === 0/);
 });
+
+test('generation flow validates returned image before showing stickers', () => {
+  const source = read('components/CutePrinter2D.tsx');
+  assert.match(source, /validateGeneratedImageDataUrl/);
+  assert.match(source, /await validateGeneratedImageDataUrl\(generatedImageUrl\)/);
+});
